@@ -42,32 +42,44 @@
 
 
     --Task 3
-    CREATE VIEW overworked_instructors AS
-    SELECT 
+    CREATE VIEW overworked_instructors_corrected_2 AS
+    SELECT
         i.instructor_id,
         p.first_name,
         p.last_name,
-        COUNT(il.instructor_id) +
-        COUNT(gl.instructor_id) +
-        COUNT(CASE WHEN i.can_teach_ensembles = TRUE THEN e.instructor_id END) AS total_lessons
-    FROM 
+        COUNT(*) AS total_lessons
+    FROM
         instructor i
-    JOIN 
+    JOIN
         person p ON i.person_id = p.person_id
-    LEFT JOIN 
-        individual_lesson il ON i.instructor_id = il.instructor_id AND DATE_PART('month', il.start_time) = DATE_PART('month', CURRENT_DATE)
-    LEFT JOIN 
-        group_lesson gl ON i.instructor_id = gl.instructor_id AND DATE_PART('month', gl.start_time) = DATE_PART('month', CURRENT_DATE)
-    LEFT JOIN 
-        ensemble e ON i.instructor_id = e.instructor_id AND DATE_PART('month', e.start_time) = DATE_PART('month', CURRENT_DATE)
-    GROUP BY 
+    LEFT JOIN (
+        SELECT 
+            individual_lesson_id AS lesson_id, 
+            instructor_id, 
+            start_time 
+        FROM 
+            individual_lesson
+        UNION ALL
+        SELECT 
+            group_lesson_id AS lesson_id, 
+            instructor_id, 
+            start_time 
+        FROM 
+            group_lesson
+        UNION ALL
+        SELECT 
+            ensemble_id AS lesson_id, 
+            instructor_id, 
+            start_time 
+        FROM 
+            ensemble
+    ) lessons ON i.instructor_id = lessons.instructor_id
+            AND DATE_PART('month', lessons.start_time) = DATE_PART('month', CURRENT_DATE)
+    GROUP BY
         i.instructor_id, p.first_name, p.last_name
-    HAVING 
-        COUNT(il.instructor_id) +
-        COUNT(gl.instructor_id) +
-        COUNT(CASE WHEN i.can_teach_ensembles = TRUE THEN e.instructor_id END) > 1 
-    ORDER BY 
-        total_lessons DESC;
+    HAVING
+        COUNT(*) > 1
+    ORDER BY
 
 
     --Task 4  
